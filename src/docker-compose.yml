@@ -48,7 +48,7 @@ services:
 
 volumes:
   mongo_db:
-//
+
 networks:
   back_net:
     ipam:
