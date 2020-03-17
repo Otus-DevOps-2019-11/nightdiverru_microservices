@@ -8,3 +8,9 @@ variables.json
 *.retry
 .vagrant/
 *.log
+*.pyc
+.molecule
+.cache
+.pytest_cache
+venv
+.env
