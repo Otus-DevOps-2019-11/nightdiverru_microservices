@@ -1,0 +1,79 @@
+version: '3.3'
+
+services:
+  node-exporter:
+    image: prom/node-exporter:v0.15.2
+    user: root
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+    networks:
+      - front_net
+
+  mongo_db:
+    image: mongo:${MONGO_VERSION:-3.2}
+    volumes:
+      - mongo_db:/data/db
+    networks:
+      back_net:
+        aliases:
+          - post_db
+          - comment_db
+
+  ui:
+    image: ${DH_USERNAME:-$USER}/ui
+    ports:
+      - ${UI_PUBLISHED_PORT:-9292}:9292/tcp
+    networks:
+      - front_net
+    depends_on:
+      - post
+      - comment
+
+  post:
+    image: ${DH_USERNAME:-$USER}/post
+    networks:
+      - back_net
+      - front_net
+    depends_on:
+      - mongo_db
+
+  comment:
+    image: ${DH_USERNAME:-$USER}/comment
+    networks:
+      - back_net
+      - front_net
+    depends_on:
+      - mongo_db
+
+  prometheus:
+    image: ${USER_NAME}/prometheus
+    networks:
+      - front_net
+    ports:
+      - '9090:9090'
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention=1d'
+
+volumes:
+  mongo_db:
+  prometheus_data:
+
+networks:
+  back_net:
+    ipam:
+      config:
+        - subnet: ${BACK_SUBNET:-10.0.2.0/24}
+  front_net:
+    ipam:
+      config:
+        - subnet: ${FRONT_SUBNET:-10.0.1.0/24}
