@@ -51,22 +51,8 @@ services:
     depends_on:
       - mongo_db
 
-  prometheus:
-    image: ${USER_NAME}/prometheus
-    networks:
-      - front_net
-    ports:
-      - '9090:9090'
-    volumes:
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention=1d'
-
 volumes:
   mongo_db:
-  prometheus_data:
 
 networks:
   back_net:
