@@ -1,20 +1,6 @@
 version: '3.3'
 
 services:
-  node-exporter:
-    image: prom/node-exporter:v0.15.2
-    user: root
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
-    networks:
-      - front_net
-
   mongo_db:
     image: mongo:${MONGO_VERSION:-3.2}
     volumes:
@@ -26,7 +12,9 @@ services:
           - comment_db
 
   ui:
-    image: ${DH_USERNAME:-$USER}/ui
+    image: ${USER_NAME:-user}/ui
+    environment:
+      - ZIPKIN_ENABLED=${ZIPKIN_ENABLED:-false}
     ports:
       - ${UI_PUBLISHED_PORT:-9292}:9292/tcp
     networks:
@@ -34,22 +22,41 @@ services:
     depends_on:
       - post
       - comment
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PUBLISHED_PORT:-24224}
+        tag: service.ui
 
   post:
-    image: ${DH_USERNAME:-$USER}/post
+    image: ${USER_NAME:-user}/post
+    environment:
+      - ZIPKIN_ENABLED=${ZIPKIN_ENABLED:-false}
     networks:
       - back_net
       - front_net
     depends_on:
       - mongo_db
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PUBLISHED_PORT:-24224}
+        tag: service.post
 
   comment:
-    image: ${DH_USERNAME:-$USER}/comment
+    image: ${USER_NAME:-user}/comment
+    environment:
+      - ZIPKIN_ENABLED=${ZIPKIN_ENABLED:-false}
     networks:
       - back_net
       - front_net
     depends_on:
       - mongo_db
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PUBLISHED_PORT:-24224}
+        tag: service.comment
 
 volumes:
   mongo_db:
