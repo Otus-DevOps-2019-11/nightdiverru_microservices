@@ -16,3 +16,4 @@ vault.key
 .pytest_cache
 venv
 .env
+kubernetes/Gitlab_ci/
